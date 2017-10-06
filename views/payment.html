@@ -263,10 +263,10 @@
     <img src="https://stc.pagseguro.uol.com.br/{{image}}" alt="{{name}}" style="float:left; margin-right:4px;">
 </script>
 <script id="tpl-installment-free" type="text/x-handlebars-template">
-    <option>{{quantity}}x de R${{installmentAmount}} sem juros</option>
+    <option>{{quantity}}x de {{installmentAmount}} sem juros</option>
 </script>
 <script id="tpl-installment" type="text/x-handlebars-template">
-    <option>{{quantity}}x de R${{installmentAmount}} com juros (R${{totalAmount}})</option>
+    <option>{{quantity}}x de {{installmentAmount}} com juros ({{totalAmount}})</option>
 </script>
 <script src="{$pagseguro.urlJS}"></script>
 <script type="text/javascript">
@@ -347,7 +347,72 @@ scripts.push(function(){
                 success: function(response) {
                     
                     $("#brand_field").val(response.brand.name);
-                    console.log(response.brand.name);
+                    
+                    PagSeguroDirectPayment.getInstallments({
+                        amount: parseFloat("{$order.vltotal}"),
+                        brand: response.brand.name,
+                        maxInstallmentNoInterest: parseInt("{$pagseguro.maxInstallmentNoInterest}"),
+                        success: function(response) {
+                            
+                            $("#installments_field").html('<option disabled="disabled"></option>');
+                            
+                            var tplInstallmentFree = Handlebars.compile($("#tpl-installment-free").html());
+                            var tplInstallment = Handlebars.compile($("#tpl-installment").html());
+
+                            var formatReal = {
+                                minimumFractionDigits:2,
+                                style:"currency",
+                                currency:"BRL"
+                            };
+
+                            $.each(response.installments[$("#brand_field").val()], function(index, installment){
+
+                                if (parseInt("{$pagseguro.maxInstallment}") > index) {
+
+                                    if (installment.interestFree === true) {
+
+                                        var $option = $(tplInstallmentFree({
+                                            quantity:installment.quantity,
+                                            installmentAmount:installment.installmentAmount.toLocaleString('pt-BR', formatReal)
+                                        }));
+
+                                    } else {
+
+                                        var $option = $(tplInstallment({
+                                            quantity:installment.quantity,
+                                            installmentAmount:installment.installmentAmount.toLocaleString('pt-BR', formatReal),
+                                            totalAmount:installment.totalAmount.toLocaleString('pt-BR', formatReal)
+                                        }));
+
+                                    }
+
+                                    $option.data("installment", installment);
+
+                                    $("#installments_field").append($option);
+
+                                }
+
+                            });
+
+                            console.log(response);
+
+                        },
+                        error: function(response) {
+                            
+                            var errors = [];
+
+                            for (var code in response.errors)
+                            {
+                                errors.push(response.errors[code]);
+                            }
+
+                            showError(errors.toString());
+
+                        },
+                        complete: function(response) {
+                            //tratamento comum para todas chamadas
+                        }
+                    });
 
                 },
                 error: function(response) {
