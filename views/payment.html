@@ -113,7 +113,9 @@
                                                         </div>
 
                                                         <fieldset class="form-group row">
-                                                            <div class="col-sm-10 contents"></div>
+                                                            <div class="col-sm-10 contents">
+
+                                                            </div>
                                                         </fieldset>
 
                                                         <div class="form-row place-order">
@@ -267,4 +269,70 @@
 <script src="{$pagseguro.urlJS}"></script>
 <script type="text/javascript">
 PagSeguroDirectPayment.setSessionId('{$pagseguro.id}');
+</script>
+<script>
+scripts.push(function(){
+
+    function showError(error)
+    {
+
+        $("#alert-error span.msg").text(error);
+        $("#alert-error").removeClass("hide");
+
+    }
+
+    PagSeguroDirectPayment.getPaymentMethods({
+        amount: parseFloat("{$order.vltotal}"),
+        success: function(response) {
+            
+            var tplDebit = Handlebars.compile($("#tpl-payment-debit").html());
+            var tplCredit = Handlebars.compile($("#tpl-payment-credit").html());
+
+            $.each(response.paymentMethods.ONLINE_DEBIT.options, function(index, option){
+
+                $("#tab-debito .contents").append(tplDebit({
+                    value:option.name,
+                    image:option.images.MEDIUM.path,
+                    text:option.displayName
+                }));
+
+            });
+
+            $.each(response.paymentMethods.CREDIT_CARD.options, function(index, option){
+
+                $("#tab-credito .contents").append(tplCredit({
+                    name:option.name,
+                    image:option.images.MEDIUM.path
+                }));
+
+            });
+
+            $("#loading").hide();
+
+            $("#tabs-methods .nav-link:first").tab("show");
+
+            $("#payment-methods").removeClass("hide");
+
+        },
+        error: function(response) {
+            
+            var errors = [];
+
+            for (var code in response.errors)
+            {
+                errors.push(response.errors[code]);
+            }
+
+            showError(errors.toString());
+            
+
+        },
+        complete: function(response) {
+            
+                        
+
+        }
+    });
+
+});
 </script>
