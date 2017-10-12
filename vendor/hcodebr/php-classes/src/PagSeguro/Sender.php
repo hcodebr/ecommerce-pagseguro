@@ -2,6 +2,11 @@
 
 namespace Hcode\PagSeguro;
 
+use Exception;
+use DOMDocument;
+use DOMElement;
+use DateTime;
+
 class Sender {
 
     private $name;
