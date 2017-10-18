@@ -503,7 +503,17 @@ scripts.push(function(){
                     $.param(params),
                     function(r){
 
-                        console.log(r);
+                        var response = JSON.parse(r);
+
+                        if (response.success) {
+
+                            window.location.href = "/payment/success";
+
+                        } else {
+
+                            showError("Não possível efetuar o pagamento.");
+
+                        }
 
                     }
                 );
