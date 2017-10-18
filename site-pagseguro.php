@@ -14,7 +14,26 @@ use \Hcode\PagSeguro\Payment;
 use \Hcode\PagSeguro\CreditCard;
 use \Hcode\PagSeguro\CreditCard\Installment;
 use \Hcode\PagSeguro\CreditCard\Holder;
+use \Hcode\PagSeguro\Bank;
 use \Hcode\Model\Order;
+
+$app->get('/payment/success/debit', function(){
+    
+    User::verifyLogin(false);
+
+    $order = new Order();
+
+    $order->getFromSession();
+
+    $order->get((int)$order->getidorder());
+
+    $page = new Page();
+
+    $page->setTpl('payment-success-debit', [
+        'order'=>$order->getValues()
+    ]);
+
+});
 
 $app->get('/payment/success/boleto', function(){
     
@@ -46,6 +65,69 @@ $app->get('/payment/success', function(){
 
     $page->setTpl('payment-success', [
         'order'=>$order->getValues()
+    ]);
+
+});
+
+$app->post('/payment/debit', function(){
+
+    User::verifyLogin(false);
+
+    $order = new Order();
+
+    $order->getFromSession();
+
+    $order->get((int)$order->getidorder());
+
+    $address = $order->getAddress();
+
+    $cart = $order->getCart();
+
+    $cpf = new Document(Document::CPF, $_POST['cpf']);
+
+    $phone = new Phone($_POST['ddd'], $_POST['phone']);
+
+    $shippingAddress = new Address(
+        $address->getdesaddress(),
+        $address->getdesnumber(),
+        $address->getdescomplement(),       
+        $address->getdesdistrict(),
+        $address->getdeszipcode(),
+        $address->getdescity(),
+        $address->getdesstate(),
+        $address->getdescountry()
+    );
+
+    $birthDate = new DateTime($_POST['birth']);
+
+    $sender = new Sender($order->getdesperson(), $cpf, $birthDate, $phone, $order->getdesemail(), $_POST['hash']);
+
+    $shipping = new Shipping($shippingAddress, (float)$cart->getvlfreight(), Shipping::PAC);
+
+    $payment = new Payment($order->getidorder(), $sender, $shipping);
+
+    foreach($cart->getProducts() as $product)
+    {
+
+        $item = new Item(
+            (int)$product['idproduct'],
+            $product['desproduct'],
+            (float)$product['vlprice'],
+            (int)$product['nrqtd']
+        );
+
+        $payment->addItem($item);
+
+    }
+
+    $bank = new Bank($_POST['bank']);
+
+    $payment->setBank($bank);
+
+    Transporter::sendTransaction($payment);
+    
+    echo json_encode([
+        'success'=>true
     ]);
 
 });
