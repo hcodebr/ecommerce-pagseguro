@@ -55,4 +55,54 @@ class Transporter {
 
     }
 
+    public function getNotification(string $code, string $type)
+    {
+
+        $url = "";
+        
+        switch ($type)
+        {
+            case 'transaction':
+            $url = Config::getNotificationTransactionURL();
+            break;
+    
+            default:
+            throw new Exception("Notificação inválida.");
+            break;
+        }
+
+        $client = new Client();
+        
+        $res = $client->request('GET', $url . $code . "?" . http_build_query(Config::getAuthentication()), [
+            'verify'=>false
+        ]);
+        
+        $xml = simplexml_load_string($res->getBody()->getContents());
+        
+        $order = new Order();
+
+        $order->get((int)$xml->reference);
+
+        if ($order->getidstatus() !== (int)$xml->status)
+        {
+
+            $order->setidstatus((int)$xml->status);
+
+            $order->save();
+
+        }
+
+        $filename = $_SERVER['DOCUMENT_ROOT'] . DIRECTORY_SEPARATOR . "res" . DIRECTORY_SEPARATOR . "logs" . DIRECTORY_SEPARATOR . date("YmdHis") . ".json";
+
+        $file = fopen($filename, "a+");
+        fwrite($file, json_encode([
+            'post'=>$_POST,
+            'xml'=>$xml
+        ]));
+        fclose($file);
+
+        return $xml;
+
+    }
+
 }
