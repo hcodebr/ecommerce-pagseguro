@@ -8,68 +8,68 @@ use DOMElement;
 
 class Item {
 
-    private $id;
-    private $description;
-    private $amount;
-    private $quantity;
+	private $id;
+	private $description;
+	private $amount;
+	private $quantity;
 
-    public function __construct(
-        int $id, 
-        string $description,
-        float $amount,
-        int $quantity
-    )
-    {
+	public function __construct(
+		int $id,
+		string $description,
+		float $amount,
+		int $quantity
+	)
+	{
 
-        if (!$id || !$id > 0)
-        {
-            throw new Exception("Informe o ID do item.");
-        }
+		if (!$id || !$id > 0)
+		{
+			throw new Exception("Informe o ID do item.");
+		}
 
-        if (!$description)
-        {
-            throw new Exception("Informe a descrição do item.");
-        }
+		if (!$description)
+		{
+			throw new Exception("Informe a descrição do item.");
+		}
 
-        if (!$amount || !$amount > 0)
-        {
-            throw new Exception("Informe o valor total do item.");
-        }
+		if (!$amount || !$amount > 0)
+		{
+			throw new Exception("Informe o valor total do item.");
+		}
 
-        if (!$quantity || !$quantity > 0)
-        {
-            throw new Exception("Informe a quantidade do item.");
-        }
+		if (!$quantity || !$quantity > 0)
+		{
+			throw new Exception("Informe a quantidade do item.");
+		}
 
-        $this->id = $id;
-        $this->description = $description;
-        $this->amount = $amount;
-        $this->quantity = $quantity;
+		$this->id = $id;
+		$this->description = $description;
+		$this->amount = $amount;
+		$this->quantity = $quantity;
 
-    }
+	}
 
-    public function getDOMElement():DOMElement
-    {
+	public function getDOMElement():DOMElement
+	{
+	
+		$dom = new DOMDocument();
 
-        $dom = new DOMDocument();
+		$item = $dom->createElement("item");
+		$item = $dom->appendChild($item);
 
-        $item = $dom->createElement("item");
-        $item = $dom->appendChild($item);
+		$amount = $dom->createElement("amount", number_format($this->amount, 2, ".", ""));
+		$amount = $item->appendChild($amount);
 
-        $amount = $dom->createElement("amount", number_format($this->amount, 2, ".", ""));
-        $amount = $item->appendChild($amount);
+		$id = $dom->createElement("id", $this->id);
+		$id = $item->appendChild($id);
 
-        $id = $dom->createElement("id", $this->id);
-        $id = $item->appendChild($id);
+		$quantity = $dom->createElement("quantity", $this->quantity);
+		$quantity = $item->appendChild($quantity);
 
-        $quantity = $dom->createElement("quantity", $this->quantity);
-        $quantity = $item->appendChild($quantity);
+		$description = $dom->createElement("description", $this->description);
+		$description = $item->appendChild($description);
 
-        $description = $dom->createElement("description", $this->description);
-        $description = $item->appendChild($description);
+		return $item;
 
-        return $item;
-
-    }
-
+	}
+	
 }

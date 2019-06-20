@@ -9,90 +9,91 @@ use DateTime;
 
 class Sender {
 
-    private $name;
-    private $cpf;
-    private $bornDate;
-    private $phone;
-    private $email;
-    private $hash;
-    private $ip;
+	private $name;
+	private $cpf;
+	private $bornDate;
+	private $phone;
+	private $email;
+	private $hash;
+	private $ip;
 
-    public function __construct(
-        string $name, 
-        Document $cpf, 
-        DateTime $bornDate, 
-        Phone $phone, 
-        string $email,
-        string $hash)
-    {
+	public function __construct(
+		string $name,
+		Document $cpf,
+		DateTime $bornDate,
+		Phone $phone,
+		string $email,
+		string $hash
+	)
+	{
 
-        if (!$name)
-        {
+		if (!$name)
+		{
 
-            throw new Exception("Informe o nome do comprador.");
+			throw new Exception("Informe o nome do comprador.");
 
-        }
+		}
 
-        if (!filter_var($email, FILTER_VALIDATE_EMAIL))
-        {
+		if (!filter_var($email, FILTER_VALIDATE_EMAIL))
+		{
 
-            throw new Excpetion("O e-mail informado não é válido.");
+			throw new Exception("O e-mail informado não é válido.");
 
-        }
+		}
 
-        if (!$hash)
-        {
+		if (!$hash)
+		{
 
-            throw new Exception("Informe a identificação do comprador.");
+			throw new Exception("Informe a identificação do comprador.");
 
-        }
+		}
 
-        $this->name = $name;
-        $this->bornDate = $bornDate;
-        $this->cpf = $cpf;
-        $this->phone = $phone;
-        $this->email = $email;
-        $this->hash = $hash;
-        $this->ip = $_SERVER["REMOTE_ADDR"];
+		$this->name = $name;
+		$this->bornDate = $bornDate;
+		$this->cpf = $cpf;
+		$this->phone = $phone;
+		$this->email = $email;
+		$this->hash = $hash;
+		$this->ip = $_SERVER["REMOTE_ADDR"];
 
-    }
+	}
 
-    public function getDOMElement():DOMElement
-    {
+	public function getDOMElement():DOMElement
+	{
+	
+		$dom = new DOMDocument();
 
-        $dom = new DOMDocument();
+		$sender = $dom->createElement("sender");
+		$sender = $dom->appendChild($sender);
 
-        $sender = $dom->createElement("sender");
-        $sender = $dom->appendChild($sender);
+		$name = $dom->createElement("name", $this->name);
+		$name = $sender->appendChild($name);
 
-        $name = $dom->createElement("name", $this->name);
-        $name = $sender->appendChild($name);
+		$email = $dom->createElement("email", $this->email);
+		$email = $sender->appendChild($email);
 
-        $email = $dom->createElement("email", $this->email);
-        $email = $sender->appendChild($email);
+		$bornDate = $dom->createElement("bornDate", $this->bornDate->format("d/m/Y"));
+		$bornDate = $sender->appendChild($bornDate);
 
-        $bornDate = $dom->createElement("bornDate", $this->bornDate->format("d/m/Y"));
-        $bornDate = $sender->appendChild($bornDate);
+		$documents = $dom->createElement("documents");
+		$documents = $sender->appendChild($documents);
+		
+		$cpf = $this->cpf->getDomElement();
+		$cpf = $dom->importNode($cpf, true);
+		$cpf = $documents->appendChild($cpf);
 
-        $documents = $dom->createElement("documents");
-        $documents = $sender->appendChild($documents);
+		$phone = $this->phone->getDomElement();
+		$phone = $dom->importNode($phone, true);
+		$phone = $sender->appendChild($phone);
 
-        $cpf = $this->cpf->getDOMElement();
-        $cpf = $dom->importNode($cpf, true);
-        $cpf = $documents->appendChild($cpf);
+		$hash = $dom->createElement("hash", $this->hash);
+		$hash = $sender->appendChild($hash);
 
-        $phone = $this->phone->getDOMElement();
-        $phone = $dom->importNode($phone, true);
-        $phone = $sender->appendChild($phone);
+		$ip = $dom->createElement("ip", $this->ip);
+		$ip = $sender->appendChild($ip);
 
-        $hash = $dom->createElement("hash", $this->hash);
-        $hash = $sender->appendChild($hash);
+		return $sender;
 
-        $ip = $dom->createElement("ip", $this->ip);
-        $ip = $sender->appendChild($ip);
-
-        return $sender;
-
-    }
+	}
 
 }

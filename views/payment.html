@@ -114,7 +114,7 @@
 
                                                         <fieldset class="form-group row">
                                                             <div class="col-sm-10 contents">
-
+                                                                
                                                             </div>
                                                         </fieldset>
 
@@ -270,9 +270,10 @@
 </script>
 <script src="{$pagseguro.urlJS}"></script>
 <script type="text/javascript">
-PagSeguroDirectPayment.setSessionId('{$pagseguro.id}');
+    PagSeguroDirectPayment.setSessionId('{$pagseguro.id}');
 </script>
 <script>
+
 scripts.push(function(){
 
     function showError(error)
@@ -284,7 +285,7 @@ scripts.push(function(){
     }
 
     PagSeguroDirectPayment.getPaymentMethods({
-        amount: parseFloat("{$order.vltotal}"),
+        amount: parseFloat('{$order.vltotal}'),
         success: function(response) {
             
             var tplDebit = Handlebars.compile($("#tpl-payment-debit").html());
@@ -293,9 +294,9 @@ scripts.push(function(){
             $.each(response.paymentMethods.ONLINE_DEBIT.options, function(index, option){
 
                 $("#tab-debito .contents").append(tplDebit({
-                    value:option.name,
-                    image:option.images.MEDIUM.path,
-                    text:option.displayName
+                    value: option.name,
+                    image: option.images.MEDIUM.path,
+                    text: option.displayName
                 }));
 
             });
@@ -303,17 +304,17 @@ scripts.push(function(){
             $.each(response.paymentMethods.CREDIT_CARD.options, function(index, option){
 
                 $("#tab-credito .contents").append(tplCredit({
-                    name:option.name,
-                    image:option.images.MEDIUM.path
+                    name: option.name,
+                    image: option.images.MEDIUM.path
                 }));
 
             });
 
             $("#loading").hide();
 
-            $("#tabs-methods .nav-link:first").tab("show");
+            $("#tabs-methods .nav-link:first").tab('show');
 
-            $("#payment-methods").removeClass("hide");
+            $("#payment-methods").removeClass('hide');
 
         },
         error: function(response) {
@@ -324,14 +325,13 @@ scripts.push(function(){
             {
                 errors.push(response.errors[code]);
             }
-
-            showError(errors.toString());
             
+            showError(errors.toString());
 
         },
         complete: function(response) {
-            
-                        
+
+
 
         }
     });
@@ -350,7 +350,7 @@ scripts.push(function(){
 
     $("#number_field").on("change", function(){
 
-        var value  = $(this).val();
+        var value = $(this).val();
 
         if (value.length >= 6) {
 
@@ -362,39 +362,39 @@ scripts.push(function(){
                     
                     PagSeguroDirectPayment.getInstallments({
                         amount: parseFloat("{$order.vltotal}"),
-                        brand: response.brand.name,
                         maxInstallmentNoInterest: parseInt("{$pagseguro.maxInstallmentNoInterest}"),
-                        success: function(response) {
+                        brand: response.brand.name,
+                        success: function(response){
                             
                             $("#installments_field").html('<option disabled="disabled"></option>');
-                            
+
                             var tplInstallmentFree = Handlebars.compile($("#tpl-installment-free").html());
                             var tplInstallment = Handlebars.compile($("#tpl-installment").html());
 
                             var formatReal = {
-                                minimumFractionDigits:2,
-                                style:"currency",
-                                currency:"BRL"
+                                minimumFractionDigits: 2,
+                                style: "currency",
+                                currency: "BRL"
                             };
-
+                            
                             $.each(response.installments[$("#brand_field").val()], function(index, installment){
 
                                 if (parseInt("{$pagseguro.maxInstallment}") > index) {
 
                                     if (installment.interestFree === true) {
 
-                                        var $option = $(tplInstallmentFree({
-                                            quantity:installment.quantity,
-                                            installmentAmount:installment.installmentAmount.toLocaleString('pt-BR', formatReal)
-                                        }));
+                                    var $option = $(tplInstallmentFree({
+                                        quantity: installment.quantity,
+                                        installmentAmount: installment.installmentAmount.toLocaleString('pt-BR', formatReal)
+                                    }));
 
                                     } else {
 
-                                        var $option = $(tplInstallment({
-                                            quantity:installment.quantity,
-                                            installmentAmount:installment.installmentAmount.toLocaleString('pt-BR', formatReal),
-                                            totalAmount:installment.totalAmount.toLocaleString('pt-BR', formatReal)
-                                        }));
+                                    var $option = $(tplInstallment({
+                                        quantity: installment.quantity,
+                                        installmentAmount: installment.installmentAmount.toLocaleString('pt-BR', formatReal),
+                                        totalAmount: installment.totalAmount.toLocaleString('pt-BR', formatReal)
+                                    }));
 
                                     }
 
@@ -419,8 +419,8 @@ scripts.push(function(){
                             showError(errors.toString());
 
                         },
-                        complete: function(response) {
-                            //tratamento comum para todas chamadas
+                        complete: function(response){
+                            // Callback para todas chamadas.
                         }
                     });
 
@@ -433,7 +433,7 @@ scripts.push(function(){
                     {
                         errors.push(response.errors[code]);
                     }
-
+                    
                     showError(errors.toString());
 
                 },
@@ -472,7 +472,7 @@ scripts.push(function(){
         e.preventDefault();
 
         if (!isValidCPF($("#form-debit [name=cpf]").val())) {
-            showError("Este número de CPF não é válido.");
+            showError("Este número de CPF não é válido");
             return false;
         }
 
@@ -486,27 +486,38 @@ scripts.push(function(){
 
         });
 
-        params.hash = PagSeguroDirectPayment.getSenderHash();
+        PagSeguroDirectPayment.onSenderHashReady(function(response){
 
-        $.post(
-            "/payment/debit",
-            $.param(params),
-            function(r){
+            if(response.status == 'error') {
+                console.log(response.message);
+                return false;
+            }
 
-                var response = JSON.parse(r);
+            var hash = response.senderHash;
 
-                if (response.success) {
+            params.hash = hash;
 
-                    window.location.href = "/payment/success/debit";
+            $.post(
+                "/payment/debit",
+                $.param(params),
+                function(r){
 
-                } else {
+                    var response = JSON.parse(r);
 
-                    showError("Não possível efetuar o pagamento.");
+                    if (response.success === true) {
+
+                        window.location.href = "/payment/success/debit";
+
+                    } else {
+
+                        showError("Não foi possível efetuar o pagamento.");
+                        
+                    }
 
                 }
+            );
 
-            }
-        );
+        });
 
     });
 
@@ -515,7 +526,7 @@ scripts.push(function(){
         e.preventDefault();
 
         if (!isValidCPF($("#form-boleto [name=cpf]").val())) {
-            showError("Este número de CPF não é válido.");
+            showError("Este número de CPF não é válido");
             return false;
         }
 
@@ -529,36 +540,47 @@ scripts.push(function(){
 
         });
 
-        params.hash = PagSeguroDirectPayment.getSenderHash();
+        PagSeguroDirectPayment.onSenderHashReady(function(response){
 
-        $.post(
-            "/payment/boleto",
-            $.param(params),
-            function(r){
+            if(response.status == 'error') {
+                console.log(response.message);
+                return false;
+            }
 
-                var response = JSON.parse(r);
+            var hash = response.senderHash;
 
-                if (response.success) {
+            params.hash = hash;
 
-                    window.location.href = "/payment/success/boleto";
+            $.post(
+                "/payment/boleto",
+                $.param(params),
+                function(r){
 
-                } else {
+                    var response = JSON.parse(r);
 
-                    showError("Não possível efetuar o pagamento.");
+                    if (response.success === true) {
+
+                        window.location.href = "/payment/success/boleto";
+
+                    } else {
+
+                        showError("Não foi possível efetuar o pagamento.");
+                        
+                    }
 
                 }
+            );
 
-            }
-        );
+        });
 
     });
-
+    
     $("#form-credit").on("submit", function(e){
 
         e.preventDefault();
 
         if (!isValidCPF($("#form-credit [name=cpf]").val())) {
-            showError("Este número de CPF não é válido.");
+            showError("Este número de CPF não é válido");
             return false;
         }
 
@@ -576,33 +598,46 @@ scripts.push(function(){
 
         PagSeguroDirectPayment.createCardToken({
             cardNumber: params.number,
+            brand: params.brand,
             cvv: params.cvv,
             expirationMonth: params.month,
             expirationYear: params.year,
             success: function(response) {
-                
+
                 params.token = response.card.token;
-                params.hash = PagSeguroDirectPayment.getSenderHash();
 
-                $.post(
-                    "/payment/credit",
-                    $.param(params),
-                    function(r){
+                PagSeguroDirectPayment.onSenderHashReady(function(response){
 
-                        var response = JSON.parse(r);
+                    if(response.status == 'error') {
+                        console.log(response.message);
+                        return false;
+                    }
 
-                        if (response.success) {
+                    var hash = response.senderHash;
 
-                            window.location.href = "/payment/success";
+                    params.hash = hash;
 
-                        } else {
+                    $.post(
+                        "/payment/credit",
+                        $.param(params),
+                        function(r){
 
-                            showError("Não possível efetuar o pagamento.");
+                            var response = JSON.parse(r);
+
+                            if (response.success === true) {
+
+                                window.location.href = "/payment/success";
+
+                            } else {
+
+                                showError("Não foi possível efetuar o pagamento.");
+                                
+                            }
 
                         }
+                    );
 
-                    }
-                );
+                });
 
             },
             error: function(response) {
@@ -612,17 +647,18 @@ scripts.push(function(){
                 {
                     errors.push(response.errors[code]);
                 }
-
+                
                 showError(errors.toString());
             },
             complete: function(response) {
                 
-                $("#form-credit [type=submit]").removeAttr("disabled");                
-
+                $("#form-credit [type=submit]").removeAttr("disabled");
+                    
             }
         });
 
     });
 
 });
+
 </script>

@@ -8,47 +8,47 @@ use DOMElement;
 
 class Phone {
 
-    private $areaCode;
-    private $number;
+	private $areaCode;
+	private $number;
 
-    public function __construct(int $areaCode, int $number)
-    {
+	public function __construct(int $areaCode, int $number)
+	{
 
-        if (!$areaCode || $areaCode < 11 || $areaCode > 99)
-        {
+		if (!$areaCode || $areaCode < 11 || $areaCode > 99)
+		{
 
-            throw new Exception("Informe o DDD do telefone.");
+			throw new Exception("Informe o DDD do telefone.");
 
-        }
+		}
 
-        if (!$number || strlen($number) < 8 || strlen($number) > 9)
-        {
+		if (!$number || strlen($number) < 8 || strlen($number) > 9)
+		{
+			
+			throw new Exception("Informe o número do telefone.");
 
-            throw new Exception("Informe o número do telefone");
+		}
 
-        }
+		$this->areaCode = $areaCode;
+		$this->number = $number;
 
-        $this->areaCode = $areaCode;
-        $this->number = $number;
+	}
 
-    }
+	public function getDOMElement():DOMElement
+	{
+	
+		$dom = new DOMDocument();
 
-    public function getDOMElement():DOMElement
-    {
+		$phone = $dom->createElement("phone");
+		$phone = $dom->appendChild($phone);
 
-        $dom = new DOMDocument();
+		$areaCode = $dom->createElement("areaCode", $this->areaCode);
+		$areaCode = $phone->appendChild($areaCode);
 
-        $phone = $dom->createElement("phone");
-        $phone = $dom->appendChild($phone);
+		$number = $dom->createElement("number", $this->number);
+		$number = $phone->appendChild($number);
 
-        $areaCode = $dom->createElement("areaCode", $this->areaCode);
-        $areaCode = $phone->appendChild($areaCode);
+		return $phone;
 
-        $number = $dom->createElement("number", $this->number);
-        $number = $phone->appendChild($number);
-
-        return $phone;
-
-    }
+	}
 
 }

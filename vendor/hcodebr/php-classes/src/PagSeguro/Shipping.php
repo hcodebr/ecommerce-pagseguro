@@ -8,60 +8,60 @@ use DOMElement;
 
 class Shipping {
 
-    const PAC = 1;
-    const SEDEX = 2;
-    const OTHER = 3;
+	const PAC = 1;
+	const SEDEX = 2;
+	const OTHER = 3;
 
-    private $address;
-    private $type;
-    private $cost;
-    private $addressRequired;
+	private $address;
+	private $type;
+	private $cost;
+	private $addressRequired;
 
-    public function __construct(
-        Address $address,
-        float $cost,
-        int $type,
-        bool $addressRequired = true
-    )
-    {
+	public function __construct(
+		Address $address,
+		float $cost,
+		int $type,		
+		bool $addressRequired = true
+	)
+	{
 
-        if ($type < 1 || $type > 3)
-        {
+		if ($type < 1 || $type > 3)
+		{
 
-            throw new Exception("Informe um tipo de frete válido.");
+			throw new Exception("Informe um tipo de frete válido");
 
-        }
+		}
 
-        $this->address = $address;
-        $this->cost = $cost;
-        $this->type = $type;
-        $this->addressRequired = $addressRequired;
+		$this->address = $address;
+		$this->cost = $cost;
+		$this->type = $type;
+		$this->addressRequired = $addressRequired;
 
-    }
+	}
 
-    public function getDOMElement():DOMElement
-    {
+	public function getDOMElement():DOMElement
+	{
+	
+		$dom = new DOMDocument();
 
-        $dom = new DOMDocument();
+		$shipping = $dom->createElement("shipping");
+		$shipping = $dom->appendChild($shipping);
 
-        $shipping = $dom->createElement("shipping");
-        $shipping = $dom->appendChild($shipping);
+		$address = $this->address->getDomElement();
+		$address = $dom->importNode($address, true);
+		$address = $shipping->appendChild($address);
 
-        $address = $this->address->getDOMElement();
-        $address = $dom->importNode($address, true);
-        $address = $shipping->appendChild($address);
+		$cost = $dom->createElement("cost", number_format($this->cost, 2, ".", ""));
+		$cost = $shipping->appendChild($cost);
 
-        $cost = $dom->createElement("cost", number_format($this->cost, 2, ".", ""));
-        $cost = $shipping->appendChild($cost);
+		$type = $dom->createElement("type", $this->type);
+		$type = $shipping->appendChild($type);
 
-        $type = $dom->createElement("type", $this->type);
-        $type = $shipping->appendChild($type);
+		$addressRequired = $dom->createElement("addressRequired", ($this->addressRequired) ? "true" : "false");
+		$addressRequired = $shipping->appendChild($addressRequired);
 
-        $addressRequired = $dom->createElement("addressRequired", ($this->addressRequired) ? "true" : "false");
-        $addressRequired = $shipping->appendChild($addressRequired);
+		return $shipping;
 
-        return $shipping;
-
-    }
-
+	}
+	
 }

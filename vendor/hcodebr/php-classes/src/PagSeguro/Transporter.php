@@ -3,106 +3,106 @@
 namespace Hcode\PagSeguro;
 
 use \GuzzleHttp\Client;
-use Hcode\Model\Order;
+use \Hcode\Model\Order;
+use Exception;
 
 class Transporter {
 
-    public static function createSession()
-    {
+	public static function createSession()
+	{
 
-        $client = new Client();
+		$client = new Client();
 
-        $res = $client->request('POST', Config::getUrlSessions() . "?" . http_build_query(Config::getAuthentication()), [
-            'verify'=>false
-        ]);
-        
-        $xml = simplexml_load_string($res->getBody()->getContents());
+		$res = $client->request('POST', Config::getUrlSessions() . "?" . http_build_query(Config::getAuthentication()), [
+			"verify"=>false
+		]);
+		
+		$xml = simplexml_load_string($res->getBody()->getContents());
 
-        return ((string)$xml->id);
+		return ((string)$xml->id);
 
-    }
+	}
 
-    public static function sendTransaction(Payment $payment)
-    {
+	public static function sendTransaction(Payment $payment)
+	{
 
-        $client = new Client();
+		$client = new Client();
+		
+		$res = $client->request('POST', Config::getUrlTransaction() . "?" . http_build_query
+		(Config::getAuthentication()), [
+			"verify"=>false,
+			"headers"=>[
+				"Content-Type"=>"application/xml"
+			],
+			"body"=>$payment->getDOMDocument()->saveXml()
+		]);
+		
+		$xml = simplexml_load_string($res->getBody()->getContents());
 
-        $res = $client->request('POST', Config::getUrlTransaction() . "?" . http_build_query(Config::getAuthentication()), [
-            'verify'=>false,
-            'headers'=>[
-                'Content-Type'=>'application/xml'
-            ],
-            'body'=>$payment->getDOMDocument()->saveXml()
-        ]);
+		$order = new Order();
 
-        $xml = simplexml_load_string($res->getBody()->getContents());
+		$order->get((int)$xml->reference);
 
-        $order = new Order();
+		$order->setPagSeguroTransactionResponse(
+			(string)$xml->code,
+			(float)$xml->grossAmount,
+			(float)$xml->discountAmount,
+			(float)$xml->feeAmount,
+			(float)$xml->netAmount,
+			(float)$xml->extraAmount,
+			(string)$xml->paymentLink
+		);
 
-        $order->get((int)$xml->reference);
-                
-        $order->setPagSeguroTransactionRespose(
-            (string)$xml->code,
-            (float)$xml->grossAmount,
-            (float)$xml->disccountAmount,
-            (float)$xml->feeAmount,
-            (float)$xml->netAmount,
-            (float)$xml->extraAmount,
-            (string)$xml->paymentLink
-        );
+		return $xml;
 
-        return $xml;
+	}
 
-    }
+	public function getNotification(string $code, string $type)
+	{
 
-    public function getNotification(string $code, string $type)
-    {
+		switch ($type)
+		{
+			case "transaction":
+			$url = Config::getNotificationTransactionURL();
+			break;
+	
+			default:
+			throw new Exception("Notificação inválida");
+			break;
+		}
 
-        $url = "";
-        
-        switch ($type)
-        {
-            case 'transaction':
-            $url = Config::getNotificationTransactionURL();
-            break;
-    
-            default:
-            throw new Exception("Notificação inválida.");
-            break;
-        }
+		$client = new Client();
+		
+		$res = $client->request('GET', $url . $code . "?" . http_build_query(Config::getAuthentication()), [
+			"verify"=>false
+		]);
+		
+		$xml = simplexml_load_string($res->getBody()->getContents());		
 
-        $client = new Client();
-        
-        $res = $client->request('GET', $url . $code . "?" . http_build_query(Config::getAuthentication()), [
-            'verify'=>false
-        ]);
-        
-        $xml = simplexml_load_string($res->getBody()->getContents());
-        
-        $order = new Order();
+		$order = new Order();
 
-        $order->get((int)$xml->reference);
+		$order->get((int)$xml->reference);
 
-        if ($order->getidstatus() !== (int)$xml->status)
-        {
+		if ($order->getidstatus() !== (int)$xml->status)
+		{
 
-            $order->setidstatus((int)$xml->status);
+			$order->setidstatus((int)$xml->status);
 
-            $order->save();
+			$order->save();
 
-        }
+		}
 
-        $filename = $_SERVER['DOCUMENT_ROOT'] . DIRECTORY_SEPARATOR . "res" . DIRECTORY_SEPARATOR . "logs" . DIRECTORY_SEPARATOR . date("YmdHis") . ".json";
+		$filename = $_SERVER['DOCUMENT_ROOT'] . DIRECTORY_SEPARATOR . "res" . DIRECTORY_SEPARATOR . "logs" . DIRECTORY_SEPARATOR . date("YmdHis") . ".json";
 
-        $file = fopen($filename, "a+");
-        fwrite($file, json_encode([
-            'post'=>$_POST,
-            'xml'=>$xml
-        ]));
-        fclose($file);
+		$file = fopen($filename, "a+");
+		fwrite($file, json_encode(array(
+			"post"=>$_POST,
+			"xml"=>$xml
+		)));
+		fclose($file);
 
-        return $xml;
+		return $xml;
 
-    }
+	}
 
 }
